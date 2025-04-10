@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "JioSaavn MP4 Downloader",
   "version": "1.0",
-  "permissions": ["downloads", "webRequest"],
+  "permissions": ["downloads", "webRequest", "webRequestBlocking", "activeTab", "scripting"],
   "host_permissions": ["*://*.jiosaavn.com/*"],
   "background": {
     "service_worker": "background.js"

@@ -5,7 +5,7 @@ chrome.webRequest.onCompleted.addListener(
     async (details) => {
         if (isProcessing) return; // Prevent multiple requests while processing
 
-        if (details.url.includes("song.generateAuthToken")) {  
+        if (details.url.includes("song.generateAuthToken")) {
             console.log("🎵 Song API Detected:", details.url);
 
             isProcessing = true; // Block further requests while fetching
@@ -20,10 +20,16 @@ chrome.webRequest.onCompleted.addListener(
                 });
 
                 let data = await response.json();
-                let songUrl = data.auth_url; 
+                let songUrl = data.auth_url;
 
                 if (songUrl && songUrl.includes(".mp4")) {
-                    let songID = new URL(songUrl).pathname.split('/').pop().split('.')[0];  
+                    let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                    let [{ result: songID }] = await chrome.scripting.executeScript({
+                        target: { tabId: tab.id },
+                        func: () => {
+                            return document.querySelector('a[screen_name="player_screen"]')?.getAttribute("title") || "Unknown";
+                        }
+                    });
 
                     if (!downloadedSongs.has(songID)) {
                         console.log("🎵 Downloading:", songUrl);
@@ -31,8 +37,8 @@ chrome.webRequest.onCompleted.addListener(
 
                         chrome.downloads.download({
                             url: songUrl,
-                            filename: `JioSaavn/Song_${songID}.mp4`,
-                            conflictAction: "uniquify"
+                            filename: `JioSaavn/${songID}.mp4`,
+                            conflictAction: "overwrite"
                         });
 
                         console.log("✅ Download started for:", songUrl);
@@ -47,7 +53,7 @@ chrome.webRequest.onCompleted.addListener(
             // Delay for 5 seconds before allowing another request
             setTimeout(() => {
                 isProcessing = false;
-            }, 5000);
+            }, 2000);
         }
     },
     { urls: ["*://www.jiosaavn.com/api.php?__call=song.generateAuthToken*"] }
